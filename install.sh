@@ -43,15 +43,19 @@ for arg in "$@"; do
     --test|-t)
       RUN_TEST=true
       ;;
+    --uninstall|-u)
+      exec "${SCRIPT_DIR}/uninstall.sh"
+      ;;
     --help|-h)
       echo "Usage: $0 [OPTIONS]"
       echo "Options:"
-      echo "  --link, -l      Symlink instead of copying statusline.py"
-      echo "  --enable, -e    Update ~/.gemini/antigravity-cli/settings.json automatically"
-      echo "  --payg          Disable quota segments for Pay-As-You-Go accounts"
-      echo "  --no-cost       Disable estimated price / cost display"
-      echo "  --test, -t      Run preview render"
-      echo "  --help, -h      Show this help message"
+      echo "  --link, -l       Symlink instead of copying statusline.py"
+      echo "  --enable, -e     Update ~/.gemini/antigravity-cli/settings.json automatically"
+      echo "  --payg           Disable quota segments for Pay-As-You-Go accounts"
+      echo "  --no-cost        Disable estimated price / cost display"
+      echo "  --test, -t       Run preview render"
+      echo "  --uninstall, -u  Uninstall antigravity-statusline"
+      echo "  --help, -h       Show this help message"
       exit 0
       ;;
     *)

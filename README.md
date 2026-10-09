@@ -148,6 +148,28 @@ If you use [CrewRig](https://github.com/hcross/crewrig) usage capture, the CLI s
 
 ---
 
+## 🗑️ Uninstallation
+
+To remove `antigravity-statusline` and clean up `settings.json`:
+
+```bash
+./uninstall.sh
+```
+
+Or via the installer:
+
+```bash
+./install.sh --uninstall
+```
+
+### What gets cleaned up:
+* Removes `~/.config/antigravity/statusline.py`
+* Removes `~/.config/antigravity/statusline.json` (if present)
+* Removes `~/.config/antigravity` if empty
+* Automatically removes the `statusLine` block from `~/.gemini/antigravity-cli/settings.json`
+
+---
+
 ## 📄 License
 
 [MIT](LICENSE) © 2026 Hoani Cross
