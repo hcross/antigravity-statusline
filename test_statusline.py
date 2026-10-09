@@ -51,6 +51,44 @@ PAYLOADS = [
         }
     },
     {
+        "description": "Without price / cost display (--no-cost)",
+        "args": ["--no-cost"],
+        "data": {
+            "cwd": SCRIPT_DIR,
+            "model": {"display_name": "Gemini 3.8 Flash (Medium)", "effort": "medium"},
+            "context_window": {
+                "total_input_tokens": 95669,
+                "total_output_tokens": 21611,
+                "context_window_size": 1048576,
+                "used_percentage": 11.2,
+                "current_usage": {"cache_read_input_tokens": 85527}
+            },
+            "quota": {
+                "gemini-5h": {"remaining_fraction": 0.698, "reset_in_seconds": 14224},
+                "gemini-weekly": {"remaining_fraction": 0.785, "reset_in_seconds": 301971}
+            }
+        }
+    },
+    {
+        "description": "Clean Pay-As-You-Go without price (--no-quotas --no-cost)",
+        "args": ["--no-quotas", "--no-cost"],
+        "data": {
+            "cwd": SCRIPT_DIR,
+            "model": {"display_name": "Gemini 3.8 Flash (Medium)", "effort": "medium"},
+            "context_window": {
+                "total_input_tokens": 95669,
+                "total_output_tokens": 21611,
+                "context_window_size": 1048576,
+                "used_percentage": 11.2,
+                "current_usage": {"cache_read_input_tokens": 85527}
+            },
+            "quota": {
+                "gemini-5h": {"remaining_fraction": 0.698, "reset_in_seconds": 14224},
+                "gemini-weekly": {"remaining_fraction": 0.785, "reset_in_seconds": 301971}
+            }
+        }
+    },
+    {
         "description": "Heavy session in git repo (High context, Pro model, with dirty tree)",
         "args": [],
         "data": {

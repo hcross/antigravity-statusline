@@ -131,13 +131,25 @@ def load_config():
     elif os.environ.get("STATUSLINE_SHOW_QUOTAS", "").lower() in ("0", "false", "no"):
         config["show_quotas"] = False
 
+    if (os.environ.get("STATUSLINE_HIDE_COST", "").lower() in ("1", "true", "yes") or
+        os.environ.get("STATUSLINE_HIDE_PRICE", "").lower() in ("1", "true", "yes")):
+        config["show_cost"] = False
+    elif (os.environ.get("STATUSLINE_SHOW_COST", "").lower() in ("0", "false", "no") or
+          os.environ.get("STATUSLINE_SHOW_PRICE", "").lower() in ("0", "false", "no")):
+        config["show_cost"] = False
+
+    # Check alias in config file
+    if "show_price" in config:
+        config["show_cost"] = config["show_price"]
+
     # 3. CLI arguments
     parser = argparse.ArgumentParser(description="Antigravity CLI Statusline HUD")
     parser.add_argument("--no-quotas", "--hide-quotas", "--payg", "--pay-as-you-go",
                         dest="no_quotas", action="store_true",
                         help="Disable 5h and weekly quota segments (pay-as-you-go mode)")
-    parser.add_argument("--no-cost", dest="no_cost", action="store_true",
-                        help="Disable estimated cost segment")
+    parser.add_argument("--no-cost", "--hide-cost", "--no-price", "--hide-price",
+                        dest="no_cost", action="store_true",
+                        help="Disable estimated session cost / price segment")
     parser.add_argument("--no-git", dest="no_git", action="store_true",
                         help="Disable Git branch segment")
     parser.add_argument("--no-dir", dest="no_dir", action="store_true",

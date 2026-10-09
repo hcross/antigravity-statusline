@@ -23,6 +23,7 @@ fail() { printf '\033[1;31m[ERROR]\033[0m %s\n' "$*" >&2; exit 1; }
 USE_SYMLINK=false
 UPDATE_SETTINGS=false
 PAYG_MODE=false
+HIDE_COST=false
 RUN_TEST=false
 
 for arg in "$@"; do
@@ -36,6 +37,9 @@ for arg in "$@"; do
     --payg|--pay-as-you-go|--no-quotas)
       PAYG_MODE=true
       ;;
+    --no-cost|--hide-cost|--no-price|--hide-price)
+      HIDE_COST=true
+      ;;
     --test|-t)
       RUN_TEST=true
       ;;
@@ -45,6 +49,7 @@ for arg in "$@"; do
       echo "  --link, -l      Symlink instead of copying statusline.py"
       echo "  --enable, -e    Update ~/.gemini/antigravity-cli/settings.json automatically"
       echo "  --payg          Disable quota segments for Pay-As-You-Go accounts"
+      echo "  --no-cost       Disable estimated price / cost display"
       echo "  --test, -t      Run preview render"
       echo "  --help, -h      Show this help message"
       exit 0
@@ -70,7 +75,7 @@ else
   success "Installed statusline.py to $TARGET_FILE"
 fi
 
-if [ "$PAYG_MODE" = true ]; then
+if [ "$PAYG_MODE" = true ] || [ "$HIDE_COST" = true ]; then
   python3 - <<EOF
 import json, os
 conf_path = os.path.expanduser("${CONFIG_FILE}")
@@ -81,21 +86,33 @@ if os.path.isfile(conf_path):
             conf = json.load(f)
     except Exception:
         pass
-conf["show_quotas"] = False
+if "${PAYG_MODE}" == "true":
+    conf["show_quotas"] = False
+if "${HIDE_COST}" == "true":
+    conf["show_cost"] = False
 with open(conf_path, "w", encoding="utf-8") as f:
     json.dump(conf, f, indent=2)
     f.write("\n")
 EOF
-  success "Configured Pay-As-You-Go mode (quotas disabled in $CONFIG_FILE)"
+  if [ "$PAYG_MODE" = true ]; then
+    success "Configured Pay-As-You-Go mode (quotas disabled in $CONFIG_FILE)"
+  fi
+  if [ "$HIDE_COST" = true ]; then
+    success "Configured price display disabled in $CONFIG_FILE"
+  fi
 fi
+
+CMD_ARGS=""
+if [ "$PAYG_MODE" = true ]; then
+  CMD_ARGS="${CMD_ARGS} --no-quotas"
+fi
+if [ "$HIDE_COST" = true ]; then
+  CMD_ARGS="${CMD_ARGS} --no-cost"
+fi
+CMD_STR="${TARGET_FILE}${CMD_ARGS}"
 
 if [ "$UPDATE_SETTINGS" = true ]; then
   if [ -f "$SETTINGS_FILE" ]; then
-    CMD_STR="$TARGET_FILE"
-    if [ "$PAYG_MODE" = true ]; then
-      CMD_STR="$TARGET_FILE --no-quotas"
-    fi
-
     python3 - <<EOF
 import json, os
 
@@ -124,11 +141,7 @@ else
   info "To enable in Antigravity CLI, ensure ~/.gemini/antigravity-cli/settings.json includes:"
   echo '  "statusLine": {'
   echo '    "type": "",'
-  if [ "$PAYG_MODE" = true ]; then
-    echo "    \"command\": \"$TARGET_FILE --no-quotas\","
-  else
-    echo "    \"command\": \"$TARGET_FILE\","
-  fi
+  echo "    \"command\": \"${CMD_STR}\","
   echo '    "enabled": true'
   echo '  }'
 fi

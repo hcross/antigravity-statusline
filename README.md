@@ -53,6 +53,12 @@ cd antigravity-statusline
 
 # Pay-As-You-Go installation (hides 5h and weekly quotas):
 ./install.sh --enable --payg
+
+# Without price / cost display:
+./install.sh --enable --no-cost
+
+# Pay-As-You-Go without price display:
+./install.sh --enable --payg --no-cost
 ```
 
 ### Installer Options
@@ -61,38 +67,44 @@ cd antigravity-statusline
 * `./install.sh --link`: Symlinks `statusline.py` instead of copying (ideal for local development).
 * `./install.sh --enable`: Updates your `~/.gemini/antigravity-cli/settings.json` automatically.
 * `./install.sh --payg`: Disables 5h and weekly quota segments for Pay-As-You-Go setups.
+* `./install.sh --no-cost`: Disables the estimated session cost / price display.
 * `./install.sh --test`: Runs a simulated render test to preview the display.
 
 ---
 
-## 💳 Pay-As-You-Go Configuration
+## 🎛️ Disabling Quotas or Price Display
 
-If your account is billed Pay-As-You-Go without subscription quota envelopes (5h / weekly), you can disable quota segments using any of the following methods:
+You can toggle individual segments depending on your setup:
 
-### Method 1: CLI flag in `settings.json` (Recommended)
-Add `--no-quotas` (or `--payg`) to the statusLine command in `~/.gemini/antigravity-cli/settings.json`:
+### 1. Hide Quotas (Pay-As-You-Go)
+* **CLI flag**: add `--no-quotas` (or `--payg`) to the `command` in `settings.json`.
+* **Config file**: set `"show_quotas": false` in `~/.config/antigravity/statusline.json`.
+* **Env variable**: export `STATUSLINE_HIDE_QUOTAS=1`.
 
+### 2. Hide Estimated Price / Cost
+If you do not need cost estimation (e.g. without CrewRig or on enterprise/fixed billing):
+* **CLI flag**: add `--no-cost` (or `--no-price`) to the `command` in `settings.json`.
+* **Config file**: set `"show_cost": false` (or `"show_price": false`) in `~/.config/antigravity/statusline.json`.
+* **Env variable**: export `STATUSLINE_HIDE_COST=1`.
+
+### Example `statusline.json`
+```json
+{
+  "show_quotas": false,
+  "show_cost": false
+}
+```
+
+### Example `settings.json` with flags
 ```json
 {
   "statusLine": {
     "type": "",
-    "command": "/Users/<your-user>/.config/antigravity/statusline.py --no-quotas",
+    "command": "/Users/<your-user>/.config/antigravity/statusline.py --no-quotas --no-cost",
     "enabled": true
   }
 }
 ```
-
-### Method 2: Config file `statusline.json`
-Create or edit `~/.config/antigravity/statusline.json`:
-
-```json
-{
-  "show_quotas": false
-}
-```
-
-### Method 3: Environment variable
-Set `STATUSLINE_HIDE_QUOTAS=1` in your shell environment (`.zshrc` / `.bashrc`).
 
 ---
 
