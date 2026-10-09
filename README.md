@@ -8,8 +8,14 @@ Designed with the **Tokyo Night** palette and **Nerd Fonts**, it renders real-ti
 
 ## ✨ Features
 
+### Subscription / Forfait view
 ```
  󰚩 Gemini 3.8 Flash (med)  󰍛 11.2%/1.0M  󰈚 117.3k tk  󰠠 $0.01  󰔛 5h: 70% (~3h57)  󰔚 Hebdo: 78%   ~/devel   main * 
+```
+
+### Pay-As-You-Go view (quotas disabled)
+```
+ 󰚩 Gemini 3.8 Flash (med)  󰍛 11.2%/1.0M  󰈚 117.3k tk  󰠠 $0.01   ~/devel   main * 
 ```
 
 * 󰚩 **Model & Thinking Effort**: Displays the current active model and its reasoning level (e.g. `low`, `med`, `high`).
@@ -19,8 +25,8 @@ Designed with the **Tokyo Night** palette and **Nerd Fonts**, it renders real-ti
   * 🔴 **Red** (> 75%)
 * 󰈚 **Token Metrics**: Total session tokens consumed (formatted with `tk` unit).
 * 󰠠 **Real-time Cost Estimation**: Session cost calculated on-the-fly based on net inputs, prompt caching, and outputs.
-* 󰔛 **5h Quota**: Remaining quota percentage with countdown until window reset.
-* 󰔚 **Weekly Quota**: Remaining weekly quota fraction.
+* 󰔛 **5h Quota** *(optional)*: Remaining quota percentage with countdown until window reset.
+* 󰔚 **Weekly Quota** *(optional)*: Remaining weekly quota fraction.
 *  **Working Directory**: Shortened path representation.
 *  **Git Integration**: Active branch name and dirty working tree indicator (`*`).
 
@@ -42,22 +48,57 @@ Clone this repository and run the install script:
 git clone https://github.com/hcross/antigravity-statusline.git
 cd antigravity-statusline
 
-# Install and automatically enable in ~/.gemini/antigravity-cli/settings.json:
+# Standard installation (Subscription / Forfait):
 ./install.sh --enable
+
+# Pay-As-You-Go installation (hides 5h and weekly quotas):
+./install.sh --enable --payg
 ```
 
-### Options
+### Installer Options
 
 * `./install.sh`: Copies `statusline.py` to `~/.config/antigravity/statusline.py`.
 * `./install.sh --link`: Symlinks `statusline.py` instead of copying (ideal for local development).
 * `./install.sh --enable`: Updates your `~/.gemini/antigravity-cli/settings.json` automatically.
+* `./install.sh --payg`: Disables 5h and weekly quota segments for Pay-As-You-Go setups.
 * `./install.sh --test`: Runs a simulated render test to preview the display.
+
+---
+
+## 💳 Pay-As-You-Go Configuration
+
+If your account is billed Pay-As-You-Go without subscription quota envelopes (5h / weekly), you can disable quota segments using any of the following methods:
+
+### Method 1: CLI flag in `settings.json` (Recommended)
+Add `--no-quotas` (or `--payg`) to the statusLine command in `~/.gemini/antigravity-cli/settings.json`:
+
+```json
+{
+  "statusLine": {
+    "type": "",
+    "command": "/Users/<your-user>/.config/antigravity/statusline.py --no-quotas",
+    "enabled": true
+  }
+}
+```
+
+### Method 2: Config file `statusline.json`
+Create or edit `~/.config/antigravity/statusline.json`:
+
+```json
+{
+  "show_quotas": false
+}
+```
+
+### Method 3: Environment variable
+Set `STATUSLINE_HIDE_QUOTAS=1` in your shell environment (`.zshrc` / `.bashrc`).
 
 ---
 
 ## ⚙️ Manual Configuration
 
-If you prefer to configure manually, place `statusline.py` in `~/.config/antigravity/` and make it executable:
+Place `statusline.py` in `~/.config/antigravity/` and make it executable:
 
 ```bash
 mkdir -p ~/.config/antigravity
@@ -65,7 +106,7 @@ cp statusline.py ~/.config/antigravity/
 chmod +x ~/.config/antigravity/statusline.py
 ```
 
-Then edit `~/.gemini/antigravity-cli/settings.json` to register the statusLine command:
+Then edit `~/.gemini/antigravity-cli/settings.json`:
 
 ```json
 {
@@ -77,36 +118,14 @@ Then edit `~/.gemini/antigravity-cli/settings.json` to register the statusLine c
 }
 ```
 
-> **Note**: You can also use `python3 ~/.config/antigravity/statusline.py` or the absolute path to your Python interpreter.
-
 ---
 
 ## 🧪 Testing & Preview
 
-To preview the statusline with mock payloads:
+Preview the statusline with mock payloads (including PAYG mode):
 
 ```bash
 python3 test_statusline.py
-```
-
-Or test via stdin directly:
-
-```bash
-echo '{
-  "cwd": "'"$PWD"'",
-  "model": {"display_name": "Gemini 3.8 Flash (Medium)", "effort": "medium"},
-  "context_window": {
-    "total_input_tokens": 125000,
-    "total_output_tokens": 15000,
-    "context_window_size": 1048576,
-    "used_percentage": 13.3,
-    "current_usage": {"cache_read_input_tokens": 110000}
-  },
-  "quota": {
-    "gemini-5h": {"remaining_fraction": 0.82, "reset_in_seconds": 12400},
-    "gemini-weekly": {"remaining_fraction": 0.91, "reset_in_seconds": 250000}
-  }
-}' | python3 statusline.py
 ```
 
 ---

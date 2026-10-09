@@ -4,6 +4,7 @@ import json
 import subprocess
 import os
 import re
+import argparse
 
 def hex_to_rgb(hex_str):
     hex_str = hex_str.lstrip('#')
@@ -100,6 +101,60 @@ def shorten_path(p):
         return os.path.join(parts[0], "…", parts[-1])
     return p
 
+def load_config():
+    config = {
+        "show_quotas": True,
+        "show_cost": True,
+        "show_git": True,
+        "show_dir": True,
+    }
+
+    # 1. Config file (statusline.json in ~/.config/antigravity or script directory)
+    candidates = [
+        os.path.expanduser("~/.config/antigravity/statusline.json"),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "statusline.json")
+    ]
+    for conf_path in candidates:
+        if os.path.isfile(conf_path):
+            try:
+                with open(conf_path, "r", encoding="utf-8") as f:
+                    user_conf = json.load(f)
+                    if isinstance(user_conf, dict):
+                        config.update(user_conf)
+                break
+            except Exception:
+                pass
+
+    # 2. Environment variables
+    if os.environ.get("STATUSLINE_HIDE_QUOTAS", "").lower() in ("1", "true", "yes"):
+        config["show_quotas"] = False
+    elif os.environ.get("STATUSLINE_SHOW_QUOTAS", "").lower() in ("0", "false", "no"):
+        config["show_quotas"] = False
+
+    # 3. CLI arguments
+    parser = argparse.ArgumentParser(description="Antigravity CLI Statusline HUD")
+    parser.add_argument("--no-quotas", "--hide-quotas", "--payg", "--pay-as-you-go",
+                        dest="no_quotas", action="store_true",
+                        help="Disable 5h and weekly quota segments (pay-as-you-go mode)")
+    parser.add_argument("--no-cost", dest="no_cost", action="store_true",
+                        help="Disable estimated cost segment")
+    parser.add_argument("--no-git", dest="no_git", action="store_true",
+                        help="Disable Git branch segment")
+    parser.add_argument("--no-dir", dest="no_dir", action="store_true",
+                        help="Disable working directory segment")
+
+    args, _ = parser.parse_known_args()
+    if args.no_quotas:
+        config["show_quotas"] = False
+    if args.no_cost:
+        config["show_cost"] = False
+    if args.no_git:
+        config["show_git"] = False
+    if args.no_dir:
+        config["show_dir"] = False
+
+    return config
+
 def main():
     try:
         raw = sys.stdin.read()
@@ -108,6 +163,8 @@ def main():
         data = json.loads(raw)
     except Exception:
         return
+
+    cfg = load_config()
 
     # 1. Model & reasoning effort
     model_obj = data.get("model", {})
@@ -146,55 +203,55 @@ def main():
     cost = estimate_cost(clean_name, total_in, total_out, cache_in)
     cost_text = f"󰠠 {format_cost(cost)}"
 
-    # 5. Quotas
-    quotas = data.get("quota", {})
-    # 5h quota (Nerd Font icon: 󰔛 timer)
-    q5h = quotas.get("gemini-5h", {})
-    rem_5h = q5h.get("remaining_fraction")
-    reset_5h = q5h.get("reset_in_seconds", 0)
-    if rem_5h is not None:
-        rem_5h_pct = int(rem_5h * 100)
-        dur_5h = format_duration(reset_5h)
-        quota_5h_text = f"󰔛 5h: {rem_5h_pct}% (~{dur_5h})"
-        if rem_5h > 0.5:
-            q5h_bg = "#9ece6a" # Green
-        elif rem_5h > 0.2:
-            q5h_bg = "#e0af68" # Orange
-        else:
-            q5h_bg = "#f7768e" # Red
-    else:
-        quota_5h_text = None
-        q5h_bg = "#9ece6a"
+    # 5. Quotas (only evaluated if enabled)
+    quota_5h_text = None
+    q5h_bg = "#9ece6a"
+    quota_w_text = None
+    qw_bg = "#7dcfff"
 
-    # Weekly quota
-    qw = quotas.get("gemini-weekly", {})
-    rem_w = qw.get("remaining_fraction")
-    if rem_w is not None:
-        rem_w_pct = int(rem_w * 100)
-        quota_w_text = f"󰔚 Hebdo: {rem_w_pct}%"
-        if rem_w > 0.5:
-            qw_bg = "#7dcfff" # Cyan
-        elif rem_w > 0.2:
-            qw_bg = "#e0af68" # Orange
-        else:
-            qw_bg = "#f7768e" # Red
-    else:
-        quota_w_text = None
-        qw_bg = "#7dcfff"
+    if cfg.get("show_quotas", True):
+        quotas = data.get("quota", {})
+        # 5h quota (Nerd Font icon: 󰔛 timer)
+        q5h = quotas.get("gemini-5h", {})
+        rem_5h = q5h.get("remaining_fraction")
+        reset_5h = q5h.get("reset_in_seconds", 0)
+        if rem_5h is not None:
+            rem_5h_pct = int(rem_5h * 100)
+            dur_5h = format_duration(reset_5h)
+            quota_5h_text = f"󰔛 5h: {rem_5h_pct}% (~{dur_5h})"
+            if rem_5h > 0.5:
+                q5h_bg = "#9ece6a" # Green
+            elif rem_5h > 0.2:
+                q5h_bg = "#e0af68" # Orange
+            else:
+                q5h_bg = "#f7768e" # Red
+
+        # Weekly quota
+        qw = quotas.get("gemini-weekly", {})
+        rem_w = qw.get("remaining_fraction")
+        if rem_w is not None:
+            rem_w_pct = int(rem_w * 100)
+            quota_w_text = f"󰔚 Hebdo: {rem_w_pct}%"
+            if rem_w > 0.5:
+                qw_bg = "#7dcfff" # Cyan
+            elif rem_w > 0.2:
+                qw_bg = "#e0af68" # Orange
+            else:
+                qw_bg = "#f7768e" # Red
 
     # 6. Directory & Git branch
     cwd = data.get("cwd") or (data.get("workspace") or {}).get("current_dir") or ""
-    dir_text = f" {shorten_path(cwd)}" if cwd else None
+    dir_text = f" {shorten_path(cwd)}" if (cwd and cfg.get("show_dir", True)) else None
 
-    git_info = get_git_info(cwd) if cwd else None
-    if git_info:
-        branch, is_dirty = git_info
-        dirty_flag = " *" if is_dirty else ""
-        git_text = f" {branch}{dirty_flag}"
-        git_bg = "#ff9e64" if not is_dirty else "#f7768e"
-    else:
-        git_text = None
-        git_bg = "#ff9e64"
+    git_text = None
+    git_bg = "#ff9e64"
+    if cwd and cfg.get("show_git", True):
+        git_info = get_git_info(cwd)
+        if git_info:
+            branch, is_dirty = git_info
+            dirty_flag = " *" if is_dirty else ""
+            git_text = f" {branch}{dirty_flag}"
+            git_bg = "#ff9e64" if not is_dirty else "#f7768e"
 
     # Assemble Powerline segments:
     # [(text, bg_hex, fg_hex)]
@@ -202,8 +259,10 @@ def main():
         (model_text, "#7aa2f7", "#15161e"),
         (ctx_text, ctx_bg, "#15161e"),
         (tokens_text, "#2ac3de", "#15161e"),
-        (cost_text, "#73daca", "#15161e"),
     ]
+
+    if cfg.get("show_cost", True):
+        segments.append((cost_text, "#73daca", "#15161e"))
 
     if quota_5h_text:
         segments.append((quota_5h_text, q5h_bg, "#15161e"))
